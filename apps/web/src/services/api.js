@@ -1,0 +1,435 @@
+import axios from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 30000, // 30 second default timeout for most requests
+})
+
+// Auth
+export const login = async (password) => {
+  const response = await api.post('/api/auth/login', { password })
+  return response.data
+}
+
+// Projects
+export const getProjects = async () => {
+  const response = await api.get('/api/projects')
+  return response.data
+}
+
+export const getProject = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}`)
+  return response.data
+}
+
+export const createProject = async (name) => {
+  const response = await api.post('/api/projects', { name })
+  return response.data
+}
+
+export const deleteProject = async (projectId) => {
+  const response = await api.delete(`/api/projects/${projectId}`, {
+    timeout: 120000  // 2 minute timeout - cascades rollback + deletes blobs
+  })
+  return response.data
+}
+
+// Project Files
+export const getProjectFiles = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/files`)
+  return response.data
+}
+
+export const uploadProjectFile = async (projectId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await api.post(`/api/projects/${projectId}/files`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data
+}
+
+export const deleteProjectFile = async (projectId, filename) => {
+  const response = await api.delete(`/api/projects/${projectId}/files/${encodeURIComponent(filename)}`)
+  return response.data
+}
+
+// Pipeline Status
+export const getProjectStatus = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/status`)
+  return response.data
+}
+
+// Extraction Instructions
+export const getExtractionInstructions = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/extraction-instructions`)
+  return response.data
+}
+
+export const updateExtractionInstructions = async (projectId, instructions) => {
+  const response = await api.put(`/api/projects/${projectId}/extraction-instructions`, {
+    instructions
+  })
+  return response.data
+}
+
+// Workflow Sections (CRUD)
+export const getSections = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/sections`)
+  return response.data
+}
+
+export const createSection = async (projectId, sectionData) => {
+  const response = await api.post(`/api/projects/${projectId}/sections`, sectionData)
+  return response.data
+}
+
+export const updateSection = async (projectId, sectionId, sectionData) => {
+  const response = await api.put(`/api/projects/${projectId}/sections/${sectionId}`, sectionData)
+  return response.data
+}
+
+export const deleteSection = async (projectId, sectionId) => {
+  const response = await api.delete(`/api/projects/${projectId}/sections/${sectionId}`)
+  return response.data
+}
+
+// Section Questions (CRUD)
+export const getQuestions = async (projectId, sectionId) => {
+  const response = await api.get(`/api/projects/${projectId}/sections/${sectionId}/questions`)
+  return response.data
+}
+
+export const createQuestion = async (projectId, sectionId, questionData) => {
+  const response = await api.post(`/api/projects/${projectId}/sections/${sectionId}/questions`, questionData)
+  return response.data
+}
+
+export const updateQuestion = async (projectId, sectionId, questionId, questionData) => {
+  const response = await api.put(`/api/projects/${projectId}/sections/${sectionId}/questions/${questionId}`, questionData)
+  return response.data
+}
+
+export const deleteQuestion = async (projectId, sectionId, questionId) => {
+  const response = await api.delete(`/api/projects/${projectId}/sections/${sectionId}/questions/${questionId}`)
+  return response.data
+}
+
+// Workflow Export/Import
+export const exportWorkflow = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/workflow/export`)
+  return response.data
+}
+
+export const importWorkflow = async (projectId, workflowData) => {
+  const response = await api.post(`/api/projects/${projectId}/workflow/import`, workflowData)
+  return response.data
+}
+
+// Workflows
+export const getWorkflows = async (projectId = null) => {
+  const params = projectId ? { project_id: projectId } : {}
+  const response = await api.get('/api/workflows', { params })
+  return response.data
+}
+
+export const runWorkflow = async (sectionId, projectId) => {
+  const response = await api.post(`/api/workflows/${sectionId}/run`, {
+    project_id: projectId,
+  })
+  return response.data
+}
+
+export const getWorkflowStatus = async (sectionId, taskId) => {
+  const response = await api.get(`/api/workflows/${sectionId}/status/${taskId}`)
+  return response.data
+}
+
+export const getResults = async (projectId) => {
+  const response = await api.get(`/api/workflows/results/${projectId}`)
+  return response.data
+}
+
+export const exportResults = async (projectId) => {
+  const response = await api.get(`/api/workflows/results/${projectId}/export`, {
+    responseType: 'blob',
+  })
+  return response.data
+}
+
+export const clearSectionAnswers = async (sectionId, projectId) => {
+  const response = await api.delete(`/api/workflows/${sectionId}/answers/${projectId}`)
+  return response.data
+}
+
+export const getSectionQuestions = async (sectionId) => {
+  const response = await api.get(`/api/workflows/${sectionId}/questions`)
+  return response.data
+}
+
+export const updateSectionQuestions = async (sectionId, questions) => {
+  const response = await api.put(`/api/workflows/${sectionId}/questions`, questions)
+  return response.data
+}
+
+export const exportSectionQuestions = async (projectId, sectionId) => {
+  const response = await api.get(`/api/workflows/${sectionId}/questions/export`, {
+    params: { project_id: projectId },
+    responseType: 'blob',
+  })
+  return response.data
+}
+
+export const importSectionQuestions = async (projectId, sectionId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await api.post(`/api/workflows/${sectionId}/questions/import`, formData, {
+    params: { project_id: projectId },
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data
+}
+
+// Query
+export const queryDocuments = async (query, projectId = null) => {
+  const response = await api.post('/api/query', {
+    query,
+    project_id: projectId,
+  })
+  return response.data
+}
+
+// Indexes
+export const getIndexes = async () => {
+  const response = await api.get('/api/indexes')
+  return response.data
+}
+
+export const getActiveIndex = async () => {
+  const response = await api.get('/api/indexes/active')
+  return response.data
+}
+
+export const setActiveIndex = async (indexName) => {
+  const response = await api.put('/api/indexes/active', {
+    index_name: indexName,
+  })
+  return response.data
+}
+
+// Pipeline
+export const getPipelineStages = async () => {
+  const response = await api.get('/api/pipeline/stages')
+  return response.data
+}
+
+export const runPipelineStage = async (projectId, stage, options = {}) => {
+  const response = await api.post(`/api/pipeline/${projectId}/run`, { stage, ...options })
+  return response.data
+}
+
+export const runFullPipeline = async (projectId) => {
+  const response = await api.post(`/api/pipeline/${projectId}/run-all`)
+  return response.data
+}
+
+export const getProjectTasks = async (projectId) => {
+  const response = await api.get(`/api/pipeline/${projectId}/tasks`)
+  return response.data
+}
+
+export const getTaskStatus = async (taskId) => {
+  const response = await api.get(`/api/pipeline/tasks/${taskId}`)
+  return response.data
+}
+
+// Rollback Operations
+export const previewRollback = async (projectId, stage, cascade = true) => {
+  const response = await api.get(`/api/rollback/${projectId}/preview/${stage}?cascade=${cascade}`)
+  return response.data
+}
+
+export const rollbackStage = async (projectId, stage, cascade = true) => {
+  const response = await api.post(`/api/rollback/${projectId}/rollback/${stage}?cascade=${cascade}`, {}, {
+    timeout: 120000  // 2 minute timeout - deleting Azure resources can take time
+  })
+  return response.data
+}
+
+export const rollbackToStage = async (projectId, targetStage) => {
+  const response = await api.post(`/api/rollback/${projectId}/rollback-to/${targetStage}`)
+  return response.data
+}
+
+export const clearAllOutput = async (projectId) => {
+  const response = await api.delete(`/api/rollback/${projectId}/clear-all`, {
+    timeout: 120000  // 2 minute timeout - deletes all output + Azure resources
+  })
+  return response.data
+}
+
+// Evaluation Operations
+export const runEvaluation = async (projectId) => {
+  const response = await api.post(`/api/evaluation/${projectId}/run`, {}, {
+    timeout: 600000  // 10 minute timeout for batch evaluation
+  })
+  return response.data
+}
+
+export const evaluateQuestion = async (projectId, sectionId, questionId) => {
+  const response = await api.post(`/api/evaluation/${projectId}/question`, {
+    section_id: sectionId,
+    question_id: questionId
+  }, {
+    timeout: 60000  // 1 minute timeout for single question
+  })
+  return response.data
+}
+
+export const getEvaluationSummary = async (projectId) => {
+  const response = await api.get(`/api/evaluation/${projectId}/summary`)
+  return response.data
+}
+
+// Chat Operations
+export const sendChatMessage = async (projectId, message, context = null, conversationHistory = []) => {
+  const response = await api.post('/api/chat', {
+    project_id: projectId,
+    message,
+    context,
+    conversation_history: conversationHistory
+  }, {
+    timeout: 120000  // 2 minute timeout - RAG queries can be slow with large doc sets
+  })
+  return response.data
+}
+
+export const updateResultFromChat = async (projectId, sectionId, questionId, updates) => {
+  // Build request body, only including non-empty values
+  const body = {
+    project_id: projectId,
+    section_id: sectionId,
+    question_id: questionId
+  }
+
+  // Only add fields that have values
+  if (updates.answer && updates.answer.trim()) {
+    body.new_answer = updates.answer.trim()
+  }
+  if (updates.reference && updates.reference.trim()) {
+    body.new_reference = updates.reference.trim()
+  }
+  if (updates.comments && updates.comments.trim()) {
+    body.new_comments = updates.comments.trim()
+  }
+
+  const response = await api.put('/api/chat/update-result', body)
+  return response.data
+}
+
+// Storage Operations
+export const getStorageStatus = async () => {
+  const response = await api.get('/api/storage/status')
+  return response.data
+}
+
+export const syncProjectToBlob = async (projectName) => {
+  const response = await api.post('/api/storage/sync', {
+    project_name: projectName,
+    direction: 'to_blob'
+  })
+  return response.data
+}
+
+export const syncProjectFromBlob = async (projectName) => {
+  const response = await api.post('/api/storage/sync', {
+    project_name: projectName,
+    direction: 'from_blob'
+  })
+  return response.data
+}
+
+export const listBlobProjects = async () => {
+  const response = await api.get('/api/storage/projects')
+  return response.data
+}
+
+export default {
+  login,
+  // Projects
+  getProjects,
+  getProject,
+  createProject,
+  deleteProject,
+  // Files
+  getProjectFiles,
+  uploadProjectFile,
+  deleteProjectFile,
+  // Pipeline
+  getProjectStatus,
+  // Extraction Instructions
+  getExtractionInstructions,
+  updateExtractionInstructions,
+  // Sections
+  getSections,
+  createSection,
+  updateSection,
+  deleteSection,
+  // Questions
+  getQuestions,
+  createQuestion,
+  updateQuestion,
+  deleteQuestion,
+  // Workflow Export/Import
+  exportWorkflow,
+  importWorkflow,
+  // Workflows
+  getWorkflows,
+  runWorkflow,
+  getWorkflowStatus,
+  getResults,
+  exportResults,
+  clearSectionAnswers,
+  getSectionQuestions,
+  updateSectionQuestions,
+  exportSectionQuestions,
+  importSectionQuestions,
+  // Query
+  queryDocuments,
+  // Indexes
+  getIndexes,
+  getActiveIndex,
+  setActiveIndex,
+  // Pipeline
+  getPipelineStages,
+  runPipelineStage,
+  runFullPipeline,
+  getProjectTasks,
+  getTaskStatus,
+  // Rollback
+  previewRollback,
+  rollbackStage,
+  rollbackToStage,
+  clearAllOutput,
+  // Evaluation
+  runEvaluation,
+  evaluateQuestion,
+  getEvaluationSummary,
+  // Chat
+  sendChatMessage,
+  updateResultFromChat,
+  // Storage
+  getStorageStatus,
+  syncProjectToBlob,
+  syncProjectFromBlob,
+  listBlobProjects,
+}

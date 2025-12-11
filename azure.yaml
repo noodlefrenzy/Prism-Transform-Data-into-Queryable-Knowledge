@@ -1,0 +1,38 @@
+name: prism
+metadata:
+  template: prism-document-intelligence
+
+infra:
+  provider: bicep
+  path: ./infra/bicep
+
+services:
+  backend:
+    project: .
+    language: python
+    host: containerapp
+    docker:
+      path: ./apps/api/Dockerfile
+      context: .
+
+  frontend:
+    project: ./apps/web
+    language: js
+    host: containerapp
+    docker:
+      path: Dockerfile
+      context: .
+      buildArgs:
+        - VITE_API_URL=${BACKEND_URL}
+
+hooks:
+  postprovision:
+    shell: sh
+    run: ./scripts/hooks/postprovision.sh
+
+  predeploy:
+    shell: sh
+    run: ./scripts/hooks/predeploy.sh
+
+pipeline:
+  provider: github
